@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sonarsource.com/msbuild/integration/2015/1">
+  <ProjectName>Bank.Domain.Tests</ProjectName>
+  <ProjectLanguage>C#</ProjectLanguage>
+  <ProjectType>Test</ProjectType>
+  <ProjectGuid>7279dbc9-b2a5-4fc5-a200-9875476a37ef</ProjectGuid>
+  <FullPath>C:\Calidad\lab-2025-ii-si784-u1-01-csharp-NestorSnIbz\Bank\Bank.Domain.Tests\Bank.Domain.Tests.csproj</FullPath>
+  <IsExcluded>false</IsExcluded>
+  <AnalysisResults>
+    <AnalysisResult Id="FilesToAnalyze" Location="C:\Calidad\lab-2025-ii-si784-u1-01-csharp-NestorSnIbz\Bank\.sonarqube\conf\1\FilesToAnalyze.txt" />
+  </AnalysisResults>
+  <AnalysisSettings>
+    <Property Name="sonar.cs.roslyn.reportFilePaths">C:\Calidad\lab-2025-ii-si784-u1-01-csharp-NestorSnIbz\Bank\.sonarqube\out\1\Issues.json</Property>
+    <Property Name="sonar.cs.analyzer.projectOutPaths">C:\Calidad\lab-2025-ii-si784-u1-01-csharp-NestorSnIbz\Bank\.sonarqube\out\1</Property>
+    <Property Name="sonar.cs.scanner.telemetry">C:\Calidad\lab-2025-ii-si784-u1-01-csharp-NestorSnIbz\Bank\.sonarqube\out\1\Telemetry.json</Property>
+  </AnalysisSettings>
+  <Configuration>Debug</Configuration>
+  <Platform>AnyCPU</Platform>
+  <TargetFramework>net8.0</TargetFramework>
+</ProjectInfo>

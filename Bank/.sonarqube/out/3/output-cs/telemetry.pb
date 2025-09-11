@@ -1,0 +1,1 @@
+{ReC:\Calidad\lab-2025-ii-si784-u1-01-csharp-NestorSnIbz\Bank\Bank.Domain.Tests\Bank.Domain.Tests.csproj¢net8.0òCSharp12
