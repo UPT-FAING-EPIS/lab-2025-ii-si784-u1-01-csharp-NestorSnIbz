@@ -1,0 +1,54 @@
+name: Sonar Continuos Integration
+
+env:
+  DOTNET_VERSION: '8.x'                     # versión de .NET
+  SONAR_ORG: 'pu03-lp3'                     # organización en SonarCloud
+  SONAR_PROJECT: 'prueba'                   # key del proyecto en SonarCloud
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  sonarqube:
+    name: Sonarqube Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurando la versión de .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Instalar NuGet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nuget
+
+      - name: Instalar Scanner
+        run: dotnet tool install -g dotnet-sonarscanner
+
+      - name: Ejecutar pruebas y cobertura
+        run: |
+          dotnet restore
+          dotnet build
+          dotnet test --collect:"XPlat Code Coverage;Format=opencover"
+
+      - name: Generar reporte de cobertura
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator -reports:**/coverage.opencover.xml -targetdir:coveragereport -reporttypes:Html;PngChart
+          cp coveragereport/*cobertura.png cobertura.png
+
+      - name: Análisis SonarCloud
+        run: |
+          dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.qualitygate.wait=true
+          dotnet build
+          dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
