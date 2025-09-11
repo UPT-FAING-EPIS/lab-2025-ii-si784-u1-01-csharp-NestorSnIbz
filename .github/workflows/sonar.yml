@@ -35,10 +35,12 @@ jobs:
       - name: Install dotnet-sonarscanner
         run: dotnet tool install -g dotnet-sonarscanner
 
-      - name: Restore & Run tests (con cobertura)
+      - name: Ejecutar pruebas y cobertura
+        working-directory: Bank
         run: |
-          dotnet restore Bank/Bank.sln
-          dotnet test Bank/Bank.sln --collect:"XPlat Code Coverage;Format=opencover"
+          dotnet restore Bank.sln
+          dotnet build Bank.sln --no-restore
+          dotnet test Bank.sln --no-build --collect:"XPlat Code Coverage;Format=opencover"
 
       - name: Begin SonarScanner
         run: |
