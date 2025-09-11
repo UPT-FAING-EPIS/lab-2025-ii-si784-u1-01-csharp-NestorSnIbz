@@ -1,10 +1,9 @@
-name: Sonar Continuos Integration
-
+name: Sonar Continuous Integration
 env:
-  DOTNET_VERSION: '8.x'                     # versión de .NET
-  SONAR_ORG: 'pu03-lp3'                     # organización en SonarCloud
-  SONAR_PROJECT: 'prueba'                   # key del proyecto en SonarCloud
-
+  DOTNET_VERSION: '8.x'
+  SONAR_ORG: 'pu03-pl3'        
+  SONAR_PROJECT: 'Nestor'     
+  PACKAGE_VERSION: '1.0.0'         
 on:
   push:
     branches: [ "main" ]
@@ -12,43 +11,69 @@ on:
 
 jobs:
   sonarqube:
-    name: Sonarqube Analysis
+    name: Sonarcloud + Pack + Publish NuGet + Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java (para Sonar)
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurando la versión de .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Instalar NuGet
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y nuget
-
-      - name: Instalar Scanner
+      - name: Install dotnet-sonarscanner
         run: dotnet tool install -g dotnet-sonarscanner
 
-      - name: Ejecutar pruebas y cobertura
+      - name: Restore & Run tests (con cobertura)
         run: |
           dotnet restore
-          dotnet build
           dotnet test --collect:"XPlat Code Coverage;Format=opencover"
 
-      - name: Generar reporte de cobertura
+      - name: Begin SonarScanner
         run: |
-          dotnet tool install --global dotnet-reportgenerator-globaltool
-          reportgenerator -reports:**/coverage.opencover.xml -targetdir:coveragereport -reporttypes:Html;PngChart
-          cp coveragereport/*cobertura.png cobertura.png
+          dotnet sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.qualitygate.wait=true
 
-      - name: Análisis SonarCloud
+      - name: Build
+        run: dotnet build --no-incremental
+
+      - name: End SonarScanner
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Pack NuGet package
+        run: dotnet pack ./Bank.Domain/Bank.Domain.csproj -c Release -o ./nuget /p:PackageVersion=${{ env.PACKAGE_VERSION }}
+
+      - name: Publish NuGet to GitHub Packages
         run: |
-          dotnet-sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.qualitygate.wait=true
-          dotnet build
-          dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          dotnet nuget push ./nuget/*.nupkg --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+        # Publicar a GitHub Packages usando el endpoint y el token. Requiere que el OWNER sea el repo owner. :contentReference[oaicite:3]{index=3}
+
+      - name: Create tag v${{ env.PACKAGE_VERSION }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41744140+github-actions[bot]@users.noreply.github.com"
+          git tag -a v${{ env.PACKAGE_VERSION }} -m "Release v${{ env.PACKAGE_VERSION }}" || echo "tag exists"
+          git push origin v${{ env.PACKAGE_VERSION }} || echo "push tag failed or already exists"
+
+      - name: Generate release notes (last 50 commits)
+        id: gen_notes
+        run: |
+          git --no-pager log -n 50 --pretty=format:'- %s' > release_notes.md
+          echo "::set-output name=body::$(sed 's/^/ /' release_notes.md | sed ':a;N;$!ba;s/\n/%0A/g')"
+
+      - name: Create GitHub Release (auto notes)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.PACKAGE_VERSION }}
+          name: "v${{ env.PACKAGE_VERSION }}"
+          body: ${{ steps.gen_notes.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
