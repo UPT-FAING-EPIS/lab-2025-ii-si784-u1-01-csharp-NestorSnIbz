@@ -35,25 +35,24 @@ jobs:
       - name: Install dotnet-sonarscanner
         run: dotnet tool install -g dotnet-sonarscanner
 
-      - name: Ejecutar pruebas y cobertura
+      - name: SonarScanner Begin
+        working-directory: Bank
+        run: |
+          dotnet sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.qualitygate.wait=true
+
+      - name: Restore, Build & Test
         working-directory: Bank
         run: |
           dotnet restore Bank.sln
           dotnet build Bank.sln --no-restore
           dotnet test Bank.sln --no-build --collect:"XPlat Code Coverage;Format=opencover"
 
-      - name: Begin SonarScanner
-        run: |
-          dotnet sonarscanner begin /k:"${{ env.SONAR_PROJECT }}" /o:"${{ env.SONAR_ORG }}" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.qualitygate.wait=true
-
-      - name: Build
-        run: dotnet build Bank/Bank.sln --no-incremental
-
-      - name: End SonarScanner
+      - name: SonarScanner End
+        working-directory: Bank
         run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
       - name: Pack NuGet package
-        run: dotnet pack ./Bank.Domain/Bank.Domain.csproj -c Release -o ./nuget /p:PackageVersion=${{ env.PACKAGE_VERSION }}
+        run: dotnet pack ./Bank/Bank.Domain/Bank.Domain.csproj -c Release -o ./nuget /p:PackageVersion=${{ env.PACKAGE_VERSION }}
 
       - name: Publish NuGet to GitHub Packages
         run: |
