@@ -2,7 +2,7 @@ name: Sonar Continuous Integration
 
 env:
   DOTNET_VERSION: '8.x'
-  SONAR_ORG: 'pu03-pl3'        
+  SONAR_ORG: 'pu03-lp3'        
   SONAR_PROJECT: 'Nestor'     
   PACKAGE_VERSION: '1.0.0'         
 
